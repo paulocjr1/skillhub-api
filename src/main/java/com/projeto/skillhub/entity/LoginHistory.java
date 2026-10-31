@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "login_history", schema = "skillhub")
+@Table(name = "login_history")
 @Entity
 public class LoginHistory {
 

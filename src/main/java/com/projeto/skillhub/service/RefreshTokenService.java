@@ -1,19 +1,52 @@
 package com.projeto.skillhub.service;
 
 
+
 import com.projeto.skillhub.entity.RefreshToken;
 import com.projeto.skillhub.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Service
 @RequiredArgsConstructor
+@Service
 public class RefreshTokenService {
 
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRepository repository;
 
-    public RefreshToken save(RefreshToken refreshToken) {
-        return refreshTokenRepository.save(refreshToken);
+    @Value("${security.jwt.refresh-expiration-minutes}")
+    private long refreshExpiration;
+
+
+    public RefreshToken create(Long userId) {
+        RefreshToken token = new RefreshToken();
+        token.setUserId(userId);
+        token.setToken(UUID.randomUUID().toString());
+        token.setExpiryDate(
+                LocalDateTime.now().plusMinutes(refreshExpiration));
+        token.setRevoked(false);
+        return repository.save(token);
     }
+
+
+    public RefreshToken validate(String token) {
+
+        RefreshToken refreshToken = repository.findByToken(token)
+                .orElseThrow(() ->
+                        new RuntimeException("Refresh token inválido"));
+
+        if (refreshToken.isRevoked()) {
+            throw new RuntimeException("Refresh token revogado");
+        }
+
+        if (refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Refresh token expirado");
+        }
+
+        return refreshToken;
+    }
+
 }
